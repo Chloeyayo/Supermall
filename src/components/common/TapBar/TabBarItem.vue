@@ -52,7 +52,7 @@ img {
   vertical-align: middle;
   margin: 4px 0 3px;
 }
-.active {
+.tab-bar-item .active {
   color: red;
 }
 </style>

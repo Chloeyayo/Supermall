@@ -1,11 +1,13 @@
 import { request } from './request'
 
-export function getHomeData(pageIndex) {
+export function getHomeData(genreId,pageIndex) {
   return request({
-    url: 'https://nfxts.520shq.com/localQuickPurchase/ogMongoAction/queryByGId?genreId=1',
-    data: {
-      pageIndex,
-      pageSize: 10
+    url: 'https://nfxts.520shq.com/localQuickPurchase/ogMongoAction/queryByGId?genreId='+genreId,
+    params: {
+      // genreId,
+      // pageIndex,
+      pageSize: 30,
+      pageIndex
     }
   })
 }
