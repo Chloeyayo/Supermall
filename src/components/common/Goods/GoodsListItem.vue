@@ -1,42 +1,82 @@
 <template>
-  <div class="goods-list-item">
-    <img :src="list.thumbnail" alt />
-    <div class="title">{{list.goodsName}}</div>
-    <div class="info">
-      <span class="actual-price">{{list.actualPrice}} </span> 
-      <span class="sales">★{{list.sales}}</span>
+  <div class="goods-item" @click="itemClick">
+    <img :src="goodsItem.show.img" alt="" @load="imageLoad">
+    <div class="goods-info">
+      <p>{{goodsItem.title}}</p>
+      <span class="price">{{goodsItem.price}}</span>
+      <span class="collect">{{goodsItem.cfav}}</span>
     </div>
   </div>
 </template>
 
 <script>
-export default {
-  props: {
-    list: Object,
-  },
-};
+  export default {
+    name: "GoodsListItem",
+    props: {
+      goodsItem: {
+        type: Object,
+        default() {
+          return {}
+        }
+      }
+    },
+    methods: {
+      imageLoad() {
+        this.$bus.$emit('itemImageLoad')
+      },
+      itemClick() {
+        this.$router.push('/detail/' + this.goodsItem.iid)
+      }
+    }
+  }
 </script>
 
-<style>
-.goods-list-item {
-  font-size: 12px;
-  width: 48%;
-}
-.goods-list-item .title {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-}
-.goods-list-item img {
-  width: 100%;
-  height: auto;
-  border-radius: 5px;
-}
-.goods-list-item .info{
-  text-align: center;
-}
-.goods-list-item .actual-price{
-  color: rgb(219, 89, 89);
-}
+<style scoped>
+  .goods-item {
+    padding-bottom: 40px;
+    position: relative;
+
+    width: 48%;
+  }
+
+  .goods-item img {
+    width: 100%;
+    height: auto;
+    border-radius: 5px;
+  }
+
+  .goods-info {
+    font-size: 12px;
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .goods-info p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 3px;
+  }
+
+  .goods-info .price {
+    color: var(--color-high-text);
+    margin-right: 20px;
+  }
+
+  .goods-info .collect {
+    position: relative;
+  }
+
+  .goods-info .collect::before {
+    content: '★';
+    position: absolute;
+    left: -15px;
+    top: -1px;
+    width: 14px;
+    height: 14px;
+  }
 </style>

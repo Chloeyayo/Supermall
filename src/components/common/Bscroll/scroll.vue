@@ -28,12 +28,16 @@ export default {
   methods: {
     scrollTo(x,y,time=300){
       this.scroll.scrollTo(x,y,time)
+    },
+    refresh(){
+      this.scroll.refresh()
     }
   },
   mounted() {
     let wrapper = this.$refs.wrapper;
     this.scroll = new Bsrcoll(wrapper, {
       click: true,
+      mouseWheel:true,
       probeType:this.probeType,
       pullUpLoad:this.pullUpLoad
     });

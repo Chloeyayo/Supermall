@@ -3,6 +3,13 @@
     <nav-bar class="nav-bar">
       <div slot="center">购物街</div>
     </nav-bar>
+    <TabControl
+      :items="tabControlList"
+      @tabClick="tabClick"
+      class="out-tab-control"
+      v-show="Fixed"
+      ref="outTabControl"
+    ></TabControl>
     <scroll
       class="scroll-wrapper"
       ref="scroll"
@@ -11,11 +18,11 @@
       @scroll="getposition"
       @pullingUp="loadmore"
     >
-      <swiper :dataList="bannerList"></swiper>
+      <swiper :dataList="bannerList" @imgLoad.once="swiperLoad"></swiper>
       <Recommand :dataList="recommendList"></Recommand>
       <Feature></Feature>
-      <TabControl :items="tabControlList" @tabClick="tabClick" class="tab-control"></TabControl>
-      <GoodsList :list="showGoods" class="goods-list"></GoodsList>
+      <TabControl :items="tabControlList" @tabClick="tabClick" ref="tabControl"></TabControl>
+      <GoodsList :goods="showGoods" class="goods-list"></GoodsList>
     </scroll>
     <BackTop @click.native="backtop" v-show="showBackTop"></BackTop>
   </div>
@@ -30,8 +37,10 @@ import TabControl from "@/components/content/tabControl/TabControl.vue";
 import GoodsList from "@/components/common/Goods/GoodsList";
 import scroll from "@/components/common/Bscroll/scroll";
 import BackTop from "@/components/common/BackTop/BackTop";
+import { debounce } from "@/common/utils.js";
 
 import { getHomeData, getMultdata } from "@/network/home.js";
+
 export default {
   name: "Home",
   data() {
@@ -53,12 +62,14 @@ export default {
         },
       ],
       goods: {
-        0: { page: 1, list: [] },
-        1: { page: 1, list: [] },
-        2: { page: 1, list: [] },
+        pop: { page: 0, list: [] },
+        new: { page: 0, list: [] },
+        sell: { page: 0, list: [] },
       },
-      tabIndex: 0,
+      currentIndex: 'pop',
       position: 0,
+      tabControlOffsetTop: 0,
+      saveY: 0,
     };
   },
   components: {
@@ -73,52 +84,86 @@ export default {
   },
   methods: {
     tabClick(index) {
-      this.tabIndex = index;
+      switch (index) {
+        case 0:
+          this.currentIndex = "pop";
+          break;
+        case 1:
+          this.currentIndex = "new";
+          break;
+        case 2:
+          this.currentIndex = "sell";
+          break;
+      }
+      this.$refs.outTabControl.currentIndex = index;
+      this.$refs.tabControl.currentIndex = index;
     },
     getposition(pos) {
       this.position = pos;
     },
     loadmore(scroll) {
-      this.getHomeDataM(this.tabIndex);
-      console.log("pullingUp");
-      console.log(this.goods[this.tabIndex].page);
+      this.getHomeDataM(this.currentIndex);
+
       setTimeout(() => {
         scroll.finishPullUp();
-      },2000);
+      }, 3000);
     },
-    getMultidataM() {
+    // imgload(){  //每次加载图片就刷新 解决下拉之后无法拖动的问题
+    //   console.log("imgload");
+    //   this.$refs.scroll.scroll.refresh();
+    // },
+    getMulttypeataM() {
       getMultdata().then((res) => {
         this.bannerList = res.data.data.banner.list;
         this.recommendList = res.data.data.recommend.list;
       });
     },
-    getHomeDataM(Id) {
-      let pageIndex = this.goods[Id].page; //设置页数
-      let genreId = Id + 1; //设置名称
-      getHomeData(genreId, pageIndex).then((res) => {
-        this.goods[Id].list.push(...res.data.data.list);
-        this.goods[Id].page += 1;
+    getHomeDataM(type) {
+      let page = this.goods[type].page + 1; //设置页数
+      getHomeData(type, page).then((res) => {
+        this.goods[type].list.push(...res.data.data.list);
+        this.goods[type].page += 1;
       });
     },
     backtop() {
       this.$refs.scroll.scrollTo(0, 0, 400);
     },
+    swiperLoad() {
+      this.tabControlOffsetTop = this.$refs.tabControl.$el.offsetTop;
+    },
   },
   created() {
-    this.getMultidataM();
-    this.getHomeDataM(0);
-    this.getHomeDataM(1);
-    this.getHomeDataM(2);
+    this.getMulttypeataM();
+    this.getHomeDataM("pop");
+    this.getHomeDataM("new");
+    this.getHomeDataM("sell");
   },
   computed: {
     showGoods() {
-      return this.goods[this.tabIndex].list;
+      return this.goods[this.currentIndex].list;
     },
     showBackTop() {
       return Math.abs(this.position.y) > 1000;
     },
+    Fixed() {
+      return Math.abs(this.position.y) > this.tabControlOffsetTop;
+    },
   },
-  mounted() {},
+  mounted() {
+    //每次加载图片就刷新 解决下拉之后无法拖动的问题
+    //使用Bus进行爷孙传递 <先要在main.js里注册
+    const de = debounce(this.$refs.scroll.refresh, 50);
+    this.$bus.$on("itemImgload", () => {
+      de();
+    });
+  },
+  activated() {
+    this.$refs.scroll.scrollTo(0, this.saveY, 1);
+    this.$refs.scroll.refresh();
+  },
+  deactivated() {
+    this.saveY = this.$refs.scroll.scroll.y;
+  },
 };
 </script>
 
@@ -137,15 +182,17 @@ export default {
     bottom: 49px;
     left: 0;
     right: 0;
-    overflow: hidden;
-  }
-  .tab-control {
-    position: sticky;
-    top: 45px;
-    z-index: 8;
+    overflow: htypeden;
   }
 }
 .goods-list {
   padding: 0 2%;
+}
+.out-tab-control {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 44px;
+  z-index: 9;
 }
 </style>
