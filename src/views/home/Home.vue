@@ -37,9 +37,9 @@ import TabControl from "@/components/content/tabControl/TabControl.vue";
 import GoodsList from "@/components/common/Goods/GoodsList";
 import scroll from "@/components/common/Bscroll/scroll";
 import BackTop from "@/components/common/BackTop/BackTop";
-import { debounce } from "@/common/utils.js";
 
 import { getHomeData, getMultdata } from "@/network/home.js";
+import {refreshMixin} from "@/common/mixin.js"
 
 export default {
   name: "Home",
@@ -82,6 +82,7 @@ export default {
     scroll,
     BackTop,
   },
+  mixins: [refreshMixin],
   methods: {
     tabClick(index) {
       switch (index) {
@@ -150,12 +151,7 @@ export default {
     },
   },
   mounted() {
-    //每次加载图片就刷新 解决下拉之后无法拖动的问题
-    //使用Bus进行爷孙传递 <先要在main.js里注册
-    const de = debounce(this.$refs.scroll.refresh, 50);
-    this.$bus.$on("itemImgload", () => {
-      de();
-    });
+    
   },
   activated() {
     this.$refs.scroll.scrollTo(0, this.saveY, 1);
@@ -163,6 +159,7 @@ export default {
   },
   deactivated() {
     this.saveY = this.$refs.scroll.scroll.y;
+    this.$bus.$off("itemImageLoad",this.refresh)
   },
 };
 </script>
@@ -182,7 +179,7 @@ export default {
     bottom: 49px;
     left: 0;
     right: 0;
-    overflow: htypeden;
+    overflow: hidden;
   }
 }
 .goods-list {
