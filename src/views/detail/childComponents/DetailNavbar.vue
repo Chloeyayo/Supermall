@@ -20,16 +20,17 @@ export default {
   data() {
     return {
       titles: ["商品", "参数", "评论", "推荐"],
-      currentIndex: 0,
     };
+  },
+  props:{
+    currentIndex:Number,
   },
   methods: {
     backHome() {
       this.$router.push("/home");
     },
     navClick(index) {
-      this.currentIndex = index;
-      console.log(index);
+      this.$emit('navClick',index)
     },
   },
   computed: {

@@ -18,7 +18,7 @@
       @scroll="getposition"
       @pullingUp="loadmore"
     >
-      <swiper :dataList="bannerList" @imgLoad.once="swiperLoad"></swiper>
+      <swiper :dataList="bannerList" @imgLoad.once="swiperLoad" class="swiper"></swiper>
       <Recommand :dataList="recommendList"></Recommand>
       <Feature></Feature>
       <TabControl :items="tabControlList" @tabClick="tabClick" ref="tabControl"></TabControl>
@@ -169,6 +169,9 @@ export default {
   position: relative;
   width: 100%;
   height: 100vh;
+  .swiper img{
+    height: 195px;
+  }
   .nav-bar {
     background-color: var(--color-tint);
     color: #fff;

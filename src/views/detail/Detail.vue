@@ -1,21 +1,24 @@
 <template>
   <div class="detail">
-    <DetailNavbar class="detail-navbar"></DetailNavbar>
+    <DetailNavbar class="detail-navbar" :currentIndex="currentIndex" @navClick="navClick"></DetailNavbar>
     <BackTop @click.native="backtop" v-show="isBackTop" ref="backtop"></BackTop>
     <scroll class="scroll" ref="scroll" @scroll="getposition">
       <DetailSwiper :data="swiperImg"></DetailSwiper>
       <DetailBaseInfo :goods="goods"></DetailBaseInfo>
       <DetailShopInfo :shop="shop"></DetailShopInfo>
       <DetailGoodsInfo :detailInfo="detailInfo" @imageLoad="imageLoad"></DetailGoodsInfo>
-      <DetailParamInfo :paramInfo="goodsParam"></DetailParamInfo>
-      <DetailComment :comment="comment"></DetailComment>
-      <GoodsList :goods="recommend"></GoodsList>
+      <DetailParamInfo :paramInfo="goodsParam" ref="info"></DetailParamInfo>
+      <DetailComment :comment="comment" ref="comment"></DetailComment>
+      <GoodsList :goods="recommend" ref="recommend"></GoodsList>
     </scroll>
+    <DetailButtomBar @addcart="addcart" class="buttom-bar"></DetailButtomBar>
   </div>
 </template>
 
 <script>
 import scroll from "@/components/common/Bscroll/scroll";
+import { debounce } from "@/common/utils.js";
+
 import BackTop from "@/components/common/BackTop/BackTop";
 import DetailNavbar from "./childComponents/DetailNavbar";
 import DetailSwiper from "./childComponents/DetailSwiper";
@@ -24,8 +27,9 @@ import DetailShopInfo from "./childComponents/DetailShopInfo";
 import DetailGoodsInfo from "./childComponents/DetailGoodsInfo";
 import DetailParamInfo from "./childComponents/DetailParamInfo";
 import DetailComment from "./childComponents/DetailComment";
-import GoodsList from "@/components/common/Goods/GoodsList.vue"
-import {refreshMixin} from "@/common/mixin.js"
+import DetailButtomBar from "./childComponents/DetailButtomBar";
+import GoodsList from "@/components/common/Goods/GoodsList.vue";
+import { refreshMixin } from "@/common/mixin.js";
 import {
   getDetailData,
   getDetailRecommend,
@@ -40,6 +44,7 @@ export default {
       id: null,
       data: null,
       isBackTop: false,
+      currentIndex: 0,
       position: [],
       swiperImg: [],
       info: [],
@@ -49,24 +54,53 @@ export default {
       goodsParam: {},
       comment: {},
       recommend: [],
+      offset: [],
     };
   },
   mixins: [refreshMixin],
   methods: {
     imageLoad() {
       this.$refs.scroll.refresh();
+      debounce(() => {
+        this.offset.push(0);
+        this.offset.push(this.$refs.info.$el.offsetTop - 44);
+        this.offset.push(this.$refs.comment.$el.offsetTop - 44);
+        this.offset.push(this.$refs.recommend.$el.offsetTop - 44);
+        console.log("created -> this.offset", this.offset);
+      }, 30)();
     },
     backtop() {
       this.$refs.scroll.scrollTo(0, 0, 400);
-      this.isBackTop=false
+      this.isBackTop = false;
+      this.currentIndex = 0;
     },
     getposition(pos) {
-      this.isBackTop=Math.abs(pos.y)>1000
+      this.isBackTop = Math.abs(pos.y) > 1000;
+      for (let index = 0; index < this.offset.length; index++) {
+        const element = this.offset[index];
+        if (-pos.y > element && this.currentIndex != index && -pos.y) {
+          this.currentIndex = index;
+        }
+      }
+    },
+    navClick(index) {
+      this.$refs.scroll.scrollTo(0, -this.offset[index], 300);
+      this.currentIndex = index;
+
+      this.isBackTop = index != 0;
+    },
+    addcart() {
+      let product = {
+        iid: this.id,
+        desc: this.goods.desc,
+        price: this.goods.realPrice,
+        title: this.goods.title,
+        img: this.swiperImg[0],
+      };
+      this.$store.dispatch('addCart', product)      
     },
   },
-  computed: {
-
-  },
+  computed: {},
 
   components: {
     DetailNavbar,
@@ -78,7 +112,8 @@ export default {
     DetailGoodsInfo,
     DetailParamInfo,
     DetailComment,
-    GoodsList
+    DetailButtomBar,
+    GoodsList,
   },
   created() {
     this.id = this.$route.params.iid;
@@ -101,17 +136,15 @@ export default {
       if (data.rate.cRate != 0) {
         this.comment = data.rate.list[0];
       }
-      getDetailRecommend().then((res) => {
-        this.recommend = res.data.data.list;
-        console.log(this.recommend);
-      });
+      this.$nextTick();
+    });
+    getDetailRecommend().then((res) => {
+      this.recommend = res.data.data.list;
     });
   },
-  mounted() {
-    
-  },
+  mounted() {},
   destroyed() {
-    this.$bus.$off("itemImageLoad", this.refresh)
+    this.$bus.$off("itemImageLoad", this.refresh);
   },
 };
 </script>
@@ -128,11 +161,20 @@ export default {
   height: 100vh;
 }
 .detail-navbar {
-  position: relative;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
   z-index: 99;
   background-color: #fff;
 }
 .scroll {
-  height: calc(100vh - 44px);
+  height: calc(100vh - 44px - 49px);
+}
+.buttom-bar{
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
 </style>

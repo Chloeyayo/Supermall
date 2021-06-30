@@ -12,6 +12,6 @@ export function getHomeData(type,page) {
 
 export function getMultdata(){
   return request({
-    url:'http://123.207.32.32:8000/home/multidata'
+    url:'/home/multidata'
   })
 }
